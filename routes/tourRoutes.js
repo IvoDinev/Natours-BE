@@ -7,6 +7,7 @@ const {
   updateTour,
   deleteTour,
   checkID,
+  checkBody
 } = require('../controllers/tourController');
 
 // 3) Routes
@@ -21,7 +22,8 @@ router.param('id', checkID);
 
 // Routes in the specified router receive the base URL and the Resource name
 // from the Router middleware to which they belong
-router.route('/').get(getAllTours).post(createTour);
+// Chaining multiple middlewares for the post request
+router.route('/').get(getAllTours).post(checkBody, createTour);
 router.route('/:id').get(getTour).patch(updateTour).delete(deleteTour);
 
 module.exports = router;

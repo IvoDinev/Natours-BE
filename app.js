@@ -14,8 +14,11 @@ const app = express();
 // It adds request body to the request
 // Custom middleware for loging of requests
 app.use(morgan('dev'));
-
 app.use(express.json());
+// Middleware for serving static files
+// The public is set as the root folder for the URL by default
+// Opening localhost:3000/overview.html will open the specified file from the public folder
+app.use(express.static(`${__dirname}/public`))
 
 // Creating own middleware, it gets applied to any request
 app.use((req, res, next) => {
