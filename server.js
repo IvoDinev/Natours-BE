@@ -25,13 +25,15 @@ const DB = process.env.DATABASE.replace(
 );
 
 // Connect to the DB
-mongoose.connect(DB, {
-  useNewUrlParser: true,
-  useCreateIndex: true,
-  useFindAndModify: false,
-}).then((connection) => {
-  console.log('DB connection successful')
-});
+mongoose
+  .connect(DB, {
+    useNewUrlParser: true,
+    useCreateIndex: true,
+    useFindAndModify: false,
+  })
+  .then((connection) => {
+    console.log('DB connection successful');
+  });
 
 const port = process.env.PORT || 3002;
 // Start the server
