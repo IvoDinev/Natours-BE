@@ -8,17 +8,52 @@ const mongoose = require('mongoose');
 
 // Specify a schema for the data
 const tourSchema = new mongoose.Schema({
-    name: {
-      type: String,
-      required: [true, 'A tour must have a name'],
-      unique: true,
-    },
-    rating: { type: Number, default: 4.5 },
-    price: {
-      type: Number,
-      required: [true, 'The tour must have a price'],
-    },
-  });
+  name: {
+    type: String,
+    required: [true, 'A tour must have a name'],
+    unique: true,
+    trim: true,
+  },
+  duration: {
+    type: Number,
+    required: [true, 'A tour must have a duration'],
+  },
+  maxGroupSize: {
+    type: Number,
+    required: [true, 'A tour must have a group size'],
+  },
+  difficulty: {
+    type: String,
+    required: [true, 'A tour must have a difficulty size'],
+  },
+  ratingsAverage: { type: Number, default: 4.5 },
+  ratingsQuantity: { type: Number, default: 0 },
+  price: {
+    type: Number,
+    required: [true, 'The tour must have a price'],
+  },
+  priceDiscount: Number,
+  summary: {
+    type: String,
+    trim: true,
+    required: [true, 'A tour must have summary']
+  },
+  description: {
+    type: String,
+    trim: true,
+  },
+  imageCover: {
+    type: String,
+    trim: true,
+    required: [true, 'A tour must have a cover image']
+  },
+  images: [String],
+  createdAt: {
+    type: Date,
+    default: Date.now()
+  },
+  startDates: [Date]
+});
 
 // Create a model which uses the Schema
 const Tour = mongoose.model('Tour', tourSchema);
