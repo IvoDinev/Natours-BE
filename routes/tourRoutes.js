@@ -6,6 +6,7 @@ const {
   getTour,
   updateTour,
   deleteTour,
+  aliasTopTours
 } = require('../controllers/tourController');
 
 // 3) Routes
@@ -22,6 +23,9 @@ const router = express.Router();
 // from the Router middleware to which they belong
 // Chaining multiple middlewares for the post request
 // router.route('/').get(getAllTours).post(checkBody, createTour);
+
+router.route('/top-5-cheap').get(aliasTopTours, getAllTours);
+
 router.route('/').get(getAllTours).post(createTour);
 router.route('/:id').get(getTour).patch(updateTour).delete(deleteTour);
 

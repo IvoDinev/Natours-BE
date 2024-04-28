@@ -1,5 +1,18 @@
 const Tour = require('../models/tourModel');
 
+// Aliasing commonly used request
+// In essence what it's happening is that a middleware gets executed
+// before the route handler. The middleware prefills the query.
+// The user will not need to add query params to the URL.
+// On calling the endpoint the alias will automatically add the params
+// to the request
+exports.aliasTopTours = (req, res, next) => {
+  req.query.limit = '5';
+  req.query.sort = '-ratingsAverage,price';
+  req.query.fields = 'name,price,ratingsAverage,summary,difficulty';
+  next();
+}
+
 // 2) Route handlers
 exports.getAllTours = async (req, res) => {
   try {
@@ -46,12 +59,41 @@ exports.getAllTours = async (req, res) => {
       // Sort by multiple criterias
       // In mongoose the query would be written in this way
       // sort('price ratingsAverage')
-      // But in browser it will be price,ratingsAverage with space
+      // But in browser it will be price,ratingsAverage with ,
       const sortingCriterias = req.query.sort.split(',').join(' ');
       query = query.sort(sortingCriterias);
+    } else {
+      // query.sort('-createdAt');
     }
+
+    // 4) Field limiting, aka "projecting"
+    // How to include fields
+    if (req.query.fields) {
+      const fields = req.query.fields.split(',').join(' ');
+      query = query.select(fields);
+    }
+    // How to exclude fields
     else {
-      query.sort('-createdAt')
+      query = query.select('-__v');
+    }
+
+    // 5) Pagination
+    const page = req.query.page * 1 || 1;
+    const limit = req.query.limit * 1 || 100;
+    const skip = (page - 1) * limit;
+    // page=2&limit=10
+    // 1-10 is page 1, 11-20 is page 2
+    // skip requires to pass the number of results to be skipped before
+    // starting to return results
+    // We skip 10 results to start from page 2 (because page 1 = 1-10)
+    query = query.skip(skip).limit(limit);
+
+    if (req.query.page) {
+      // Returns the total number of documents in the collection
+      const totalTours = await Tour.countDocuments();
+      if (skip >= totalTours) {
+        throw new Error('This page does not exist');
+      }
     }
 
     const tours = await query;
