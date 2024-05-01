@@ -116,3 +116,126 @@ exports.deleteTour = async (req, res) => {
     });
   }
 };
+
+// Aggregation pipeline, find min, max, avg
+// It runs all documents in a collection through
+// functions which could perform different calculations
+exports.getTourStats = async (req, res) => {
+  try {
+    // The aggregation pipeline receives an array of stages. Every document will go
+    // through each stage
+    const stats = await Tour.aggregate([
+      // First stage - match. Performs filtering based on some condition
+      {
+        $match: {
+          // Field by which the match should be performed
+          ratingsAverage: {
+            $gte: 4.5,
+          },
+        },
+      },
+      {
+        // Allows to group documents together using accumulators.
+        $group: {
+          // We always need to specify id in order to specify by what we want to group
+          // difficulty is the field by which we will group
+          _id: { $toUpper: '$difficulty' },
+          // Fields which would contain the results of the aggregations
+          num: { $sum: 1 },
+          numRatings: { $sum: '$ratingsQuantity' },
+          avgRating: { $avg: '$ratingsAverage' },
+          avgPrice: { $avg: '$price' },
+          minPrice: { $min: '$price' },
+          maxPrice: { $max: '$price' },
+        },
+      },
+      {
+        // Here we need to use the field names from the previous stage
+        $sort: {
+          avgPrice: 1,
+        },
+      },
+      // We can repeat stages
+      // {
+      //   $match: {
+      //     _id: { $ne: 'EASY' },
+      //   },
+      // },
+    ]);
+
+    res.status(200).json({
+      status: 'success',
+      data: {
+        stats,
+      },
+    });
+  } catch (err) {
+    res.status(404).json({
+      status: 'fail',
+      message: 'Tour not found!',
+    });
+  }
+};
+
+exports.getMonthlyPlan = async (req, res) => {
+  try {
+    const year = Number(req.params.year);
+
+    const plan = await Tour.aggregate([
+      {
+        // takes out the elements of an array field in the document (deconstructs the array)
+        // and creates separate documents for every element in the array field
+        // Create separate documents for every start date on which a tour starts
+        $unwind: '$startDates',
+      },
+      {
+        $match: {
+          startDates: {
+            // Match all tours which start in the current year
+            // start date to be between the first and last date of the year
+            $gte: new Date(`${year}-01-01`),
+            $lte: new Date(`${year}-12-31`),
+          },
+        },
+      },
+      {
+        $group: {
+          _id: { $month: '$startDates' },
+          toursCount: { $sum: 1 },
+          tours: { $push: '$name' },
+        },
+      },
+      {
+        $addFields: {
+          month: '$_id',
+        },
+      },
+      {
+        // Show or hide specific fields
+        $project: {
+          _id: 0,
+        },
+      },
+      {
+        $sort: {
+          toursCount: -1,
+        },
+      },
+      {
+        $limit: 12
+      }
+    ]);
+
+    res.status(200).json({
+      status: 'success',
+      data: {
+        plan,
+      },
+    });
+  } catch (err) {
+    res.status(404).json({
+      status: 'fail',
+      message: 'Tour not found!',
+    });
+  }
+};

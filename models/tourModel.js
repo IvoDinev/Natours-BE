@@ -7,55 +7,71 @@
 const mongoose = require('mongoose');
 
 // Specify a schema for the data
-const tourSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: [true, 'A tour must have a name'],
-    unique: true,
-    trim: true,
+const tourSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: [true, 'A tour must have a name'],
+      unique: true,
+      trim: true,
+    },
+    duration: {
+      type: Number,
+      required: [true, 'A tour must have a duration'],
+    },
+    maxGroupSize: {
+      type: Number,
+      required: [true, 'A tour must have a group size'],
+    },
+    difficulty: {
+      type: String,
+      required: [true, 'A tour must have a difficulty size'],
+    },
+    ratingsAverage: { type: Number, default: 4.5 },
+    ratingsQuantity: { type: Number, default: 0 },
+    price: {
+      type: Number,
+      required: [true, 'The tour must have a price'],
+    },
+    priceDiscount: Number,
+    summary: {
+      type: String,
+      trim: true,
+      required: [true, 'A tour must have summary'],
+    },
+    description: {
+      type: String,
+      trim: true,
+    },
+    imageCover: {
+      type: String,
+      trim: true,
+      required: [true, 'A tour must have a cover image'],
+    },
+    images: [String],
+    createdAt: {
+      type: Date,
+      default: Date.now(),
+      // Excludes the field from the response
+      // Allows to hide fields from the client
+      select: false,
+    },
+    startDates: [Date],
   },
-  duration: {
-    type: Number,
-    required: [true, 'A tour must have a duration'],
-  },
-  maxGroupSize: {
-    type: Number,
-    required: [true, 'A tour must have a group size'],
-  },
-  difficulty: {
-    type: String,
-    required: [true, 'A tour must have a difficulty size'],
-  },
-  ratingsAverage: { type: Number, default: 4.5 },
-  ratingsQuantity: { type: Number, default: 0 },
-  price: {
-    type: Number,
-    required: [true, 'The tour must have a price'],
-  },
-  priceDiscount: Number,
-  summary: {
-    type: String,
-    trim: true,
-    required: [true, 'A tour must have summary']
-  },
-  description: {
-    type: String,
-    trim: true,
-  },
-  imageCover: {
-    type: String,
-    trim: true,
-    required: [true, 'A tour must have a cover image']
-  },
-  images: [String],
-  createdAt: {
-    type: Date,
-    default: Date.now(),
-    // Excludes the field from the response
-    // Allows to hide fields from the client
-    select: false
-  },
-  startDates: [Date]
+  {
+    // Specify that virtual properties should be added to the response when the 
+    // response is JSON or Object
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  }
+);
+
+// Create virtual properties which are not persisted into the DB
+// We call get() on the virtual field to be able to create it on every GET request
+// Virtual fields cannot be used in queries because they don't exist in the DB
+tourSchema.virtual('durationWeeks').get(function () {
+  // Calculate the value of the virtual field from a real field in the document
+  return this.duration / 7;
 });
 
 // Create a model which uses the Schema
