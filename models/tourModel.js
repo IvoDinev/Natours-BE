@@ -5,6 +5,7 @@
 // Schema - describes the structure of the data, allows to do data modelling
 // Model - provides an interface to the DB for CRUD operations
 const mongoose = require('mongoose');
+const slugify = require('slugify');
 
 // Specify a schema for the data
 const tourSchema = new mongoose.Schema(
@@ -14,6 +15,9 @@ const tourSchema = new mongoose.Schema(
       required: [true, 'A tour must have a name'],
       unique: true,
       trim: true,
+    },
+    slug: {
+      type: String,
     },
     duration: {
       type: Number,
@@ -46,7 +50,6 @@ const tourSchema = new mongoose.Schema(
     imageCover: {
       type: String,
       trim: true,
-      required: [true, 'A tour must have a cover image'],
     },
     images: [String],
     createdAt: {
@@ -57,9 +60,13 @@ const tourSchema = new mongoose.Schema(
       select: false,
     },
     startDates: [Date],
+    secretTour: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
-    // Specify that virtual properties should be added to the response when the 
+    // Specify that virtual properties should be added to the response when the
     // response is JSON or Object
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
@@ -72,6 +79,34 @@ const tourSchema = new mongoose.Schema(
 tourSchema.virtual('durationWeeks').get(function () {
   // Calculate the value of the virtual field from a real field in the document
   return this.duration / 7;
+});
+
+// Document pre-middleware, runs before save() and create()
+// It doesn't work for insertMany()
+tourSchema.pre('save', function (next) {
+  this.slug = slugify(this.name, {
+    lower: true,
+  });
+  next();
+});
+
+// Runs after all "pre" middleware functions have completed and has access to the
+// newly saved document
+// tourSchema.post('save', function (doc, next) {
+//   console.log(doc);
+//   next();
+// });
+
+// Query middleware, runs before find(), this keyword will point to the query
+tourSchema.pre(/^find/, function (next) {
+  this.find({ secretTour: { $ne: true } });
+  next();
+});
+
+// Aggregation middleware, aalows to add or change stages of an aggregation pipeline
+tourSchema.pre('aggregate', function (next) {
+  this.pipeline().unshift({ $match: { secretTour: { $ne: true } } });
+  next();
 });
 
 // Create a model which uses the Schema
@@ -94,3 +129,8 @@ module.exports = Tour;
 //     console.log(doc);
 //   })
 //   .catch((err) => console.log('ERROR: ', err));
+
+// Mongoose Middleware - allows to perform some logic when an event in the DB
+// is about to happen - like saving a new document. With middleware we can hook in
+// between triggering the DB event and actually performing the event or we can hook in
+// after performing the event.
