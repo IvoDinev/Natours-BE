@@ -6,6 +6,7 @@
 // Model - provides an interface to the DB for CRUD operations
 const mongoose = require('mongoose');
 const slugify = require('slugify');
+const validator = require('validator');
 
 // Specify a schema for the data
 const tourSchema = new mongoose.Schema(
@@ -15,6 +16,9 @@ const tourSchema = new mongoose.Schema(
       required: [true, 'A tour must have a name'],
       unique: true,
       trim: true,
+      // Built-in validator only for strings
+      maxlength: [40, 'A tour must have a name of at least 40 characters'],
+      // validate: [validator.isAlpha, 'name should contain only characters'],
     },
     slug: {
       type: String,
@@ -30,14 +34,32 @@ const tourSchema = new mongoose.Schema(
     difficulty: {
       type: String,
       required: [true, 'A tour must have a difficulty size'],
+      enum: {
+        values: ['easy', 'medium', 'difficult'],
+        message: 'Difficulty is easy, medium or difficult',
+      },
     },
-    ratingsAverage: { type: Number, default: 4.5 },
+    ratingsAverage: {
+      type: Number,
+      default: 4.5,
+      min: [1, 'Rating must be above 1.0'],
+      max: [5, 'A rating must be below 5.0'],
+    },
     ratingsQuantity: { type: Number, default: 0 },
     price: {
       type: Number,
       required: [true, 'The tour must have a price'],
     },
-    priceDiscount: Number,
+    priceDiscount: {
+      type: Number,
+      // Custom validator, {VALUE} has access to val
+      validate: {
+        message: 'Discount price ({VALUE}) should be below the regulart price',
+        validator: function (val) {
+          return val < this.price;
+        },
+      },
+    },
     summary: {
       type: String,
       trim: true,
