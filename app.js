@@ -1,6 +1,8 @@
 const express = require('express');
 const morgan = require('morgan');
 
+const globalErrorHandler = require('./controllers/errorController');
+const AppError = require('./utils/appError');
 const tourRouter = require('./routes/tourRoutes');
 const userRouter = require('./routes/userRoutes');
 
@@ -24,11 +26,11 @@ app.use(express.json());
 app.use(express.static(`${__dirname}/public`));
 
 // Creating own middleware, it gets applied to any request
-app.use((req, res, next) => {
-  console.log('Hello from the middleware');
-  // Never forget to call next otherwise the middleware stack would get stuck
-  next();
-});
+// app.use((req, res, next) => {
+//   console.log('Hello from the middleware');
+//   // Never forget to call next otherwise the middleware stack would get stuck
+//   next();
+// });
 
 // Modify a request with middleware
 app.use((req, res, next) => {
@@ -40,6 +42,18 @@ app.use((req, res, next) => {
 // The router middleware gets called when a request hits the specified URL
 app.use(`${API_BASE_URL}/${ENDPOINTS.TOURS}`, tourRouter);
 app.use(`${API_BASE_URL}/${ENDPOINTS.USERS}`, userRouter);
+
+// Middleware which runs for all HTTP methods
+app.all('*', (req, res, next) => {
+  // const err = new Error(`Can't find ${req.originalUrl}`);
+  // err.status = 'fail';
+  // err.statusCode = 404;
+
+  next(new AppError(`Can't find ${req.originalUrl}`, 404));
+});
+
+// Error handling middleware
+app.use(globalErrorHandler);
 
 module.exports = app;
 
