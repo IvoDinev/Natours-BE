@@ -1,6 +1,7 @@
 const Tour = require('../models/tourModel');
 const APIFeatures = require('../utils/apiFeatures');
 const catchAsync = require('../utils/catchAsync');
+const AppError = require('../utils/appError');
 
 // Aliasing commonly used request
 // In essence what it's happening is that a middleware gets executed
@@ -39,6 +40,11 @@ exports.getTour = catchAsync(async (req, res, next) => {
   const tour = await Tour.findById(tourId);
   // Tour.findOne({ _id: req.params.id })
 
+  if (!tour) {
+    next(new AppError('No tour found for the provided ID', 404));
+    return;
+  }
+
   res.status(200).json({
     status: 'success',
     data: { tour },
@@ -66,6 +72,11 @@ exports.updateTour = catchAsync(async (req, res, next) => {
     runValidators: true,
   });
 
+  if (!newTour) {
+    next(new AppError('No tour found for the provided ID', 404));
+    return;
+  }
+
   res.status(200).json({
     status: 'success',
     data: {
@@ -75,7 +86,12 @@ exports.updateTour = catchAsync(async (req, res, next) => {
 });
 
 exports.deleteTour = catchAsync(async (req, res, next) => {
-  await Tour.findByIdAndDelete(req.params.id);
+  const tour = await Tour.findByIdAndDelete(req.params.id);
+
+  if (!tour) {
+    next(new AppError('No tour found for the provided ID', 404));
+    return;
+  }
 
   res.status(204).json({
     status: 'success',
